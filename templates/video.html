@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Комментарии к видео{% endblock %}
+{% block content %}
+<h2 class="text-3xl font-bold mb-10 text-blue-900 text-center">Видео пациента</h2>
+<div class="flex flex-col md:flex-row gap-8 justify-center items-start mb-10">
+    <div class="flex-1 flex justify-center">
+        {% if video.filename.lower().endswith('.mp4') or video.filename.lower().endswith('.mov') or video.filename.lower().endswith('.webm') %}
+        <video src="/instance/{{ video.filename }}" class="rounded-3xl shadow-2xl border-4 border-blue-200 bg-black" style="max-width:700px; max-height:520px; width:100%; aspect-ratio:16/9;" controls preload="none"></video>
+        {% endif %}
+    </div>
+    <div class="w-full md:w-80 max-w-xs bg-white rounded-2xl shadow p-6 flex flex-col gap-3 border border-blue-100 min-h-[520px] md:min-h-[520px] md:h-full justify-between" style="min-height:358px;">
+        <div>
+            <div class="font-mono text-base text-blue-900 break-all">Файл: {{ video.filename }}</div>
+            <div class="font-mono text-base text-blue-900">Пациент: {{ video.user.email }}</div>
+            <div class="text-sm text-gray-600">Загружено: {{ video.uploaded_at.strftime('%d.%m.%Y %H:%M') }}</div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold">Результат:</span>
+                <span class="result-text text-base font-bold {% if video.result %}{% if 'норм' in video.result|lower %}text-green-700{% elif 'болезнь' in video.result|lower or 'аномал' in video.result|lower %}text-red-700{% else %}text-gray-700{% endif %}{% else %}text-gray-400{% endif %}">{{ video.result or '—' }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold">Прогресс:</span>
+                <div class="w-28 bg-gray-200 rounded-full h-3">
+                    <div class="h-3 rounded-full transition-all duration-500 {{ 'bg-blue-600' if not video.is_finish else 'bg-green-500' }}" style="width: {{ (video.progress * 100)|round(0) }}%"></div>
+                </div>
+                <span class="text-base text-gray-700 font-semibold">{{ (video.progress * 100)|round(0) }}%</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold">Статус:</span>
+                {% if video.is_finish %}
+                    <span class="text-green-600 font-bold flex items-center gap-1 text-base"><svg class="inline h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Готово</span>
+                {% else %}
+                    <span class="text-yellow-600 font-bold flex items-center gap-1 text-base"><svg class="inline h-5 w-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"/></svg>Обработка...</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="max-w-4xl mx-auto w-full mb-8">
+  <div class="bg-white rounded-2xl shadow p-6 flex flex-col gap-6">
+    {% if allow_comment %}
+    <form method="post" class="flex flex-col md:flex-row gap-3 items-stretch mb-4">
+      <input type="text" name="comment" placeholder="Добавить комментарий..." class="border rounded px-4 py-3 text-base flex-1 focus:outline-none focus:ring-2 focus:ring-blue-300" required>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded transition text-base">Отправить</button>
+    </form>
+    {% endif %}
+    <h3 class="text-lg font-semibold mb-2 text-blue-700">История комментариев</h3>
+    {% if comments %}
+      <div class="flex flex-col gap-4">
+        {% for comment in comments %}
+        <div class="bg-blue-50 border-l-8 border-blue-400 px-4 py-3 text-base text-gray-800 rounded-xl shadow">
+          <span class="font-semibold">{{ comment.doctor.email }}</span>: {{ comment.text }}
+          <span class="text-gray-400 text-sm">({{ comment.created_at.strftime('%d.%m.%Y %H:%M') }})</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-gray-500">Комментариев нет</div>
+    {% endif %}
+  </div>
+</div>
+<a href="{{ url_for('doctor_panel') }}" class="inline-block mt-8 text-blue-600 hover:underline text-lg mb-10">← Назад к пациентам</a>
+{% endblock %}

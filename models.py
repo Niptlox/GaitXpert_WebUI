@@ -39,6 +39,7 @@ class Video(db.Model):
     is_finish = db.Column(db.Boolean, default=False)
     comments = db.relationship('Comment', backref='video', lazy=True)
 
+
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     video_id = db.Column(db.Integer, db.ForeignKey('video.id'), nullable=False)

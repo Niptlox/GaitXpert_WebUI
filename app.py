@@ -149,15 +149,33 @@ def doctor_panel():
         patients = User.query.filter_by(role='patient').all()
     return render_template('doctor.html', patients=patients, search=search)
 
-@app.route('/doctor/comments/<int:video_id>')
+# @app.route('/doctor/comments/<int:video_id>')
+# @login_required
+# def video_comments(video_id):
+#     if current_user.role != 'doctor':
+#         flash('Доступ запрещён', 'error')
+#         return redirect(url_for('index'))
+#     video = Video.query.get_or_404(video_id)
+#     comments = Comment.query.filter_by(video_id=video.id).order_by(Comment.created_at.desc()).all()
+#     return render_template('video.html', video=video, comments=comments)
+
+@app.route('/doctor/video/<int:video_id>', methods=['GET', 'POST'])
 @login_required
-def video_comments(video_id):
+def doctor_video(video_id):
     if current_user.role != 'doctor':
         flash('Доступ запрещён', 'error')
         return redirect(url_for('index'))
     video = Video.query.get_or_404(video_id)
+    if request.method == 'POST':
+        comment_text = request.form.get('comment')
+        if comment_text:
+            comment = Comment(video_id=video.id, doctor_id=current_user.id, text=comment_text)
+            db.session.add(comment)
+            db.session.commit()
+            # flash('Комментарий добавлен', 'success')
+            return redirect(url_for('doctor_video', video_id=video_id))
     comments = Comment.query.filter_by(video_id=video.id).order_by(Comment.created_at.desc()).all()
-    return render_template('video_comments.html', video=video, comments=comments)
+    return render_template('video.html', video=video, comments=comments, allow_comment=True)
 
 @app.route('/patient', methods=['GET', 'POST'])
 @login_required
