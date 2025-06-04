@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded shadow">
+    <h2 class="text-2xl font-bold mb-6">Вход</h2>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="mb-4">
+            {{ form.email.label(class_="block mb-1") }}
+            {{ form.email(class_="w-full border rounded px-3 py-2") }}
+        </div>
+        <div class="mb-4">
+            {{ form.password.label(class_="block mb-1") }}
+            {{ form.password(class_="w-full border rounded px-3 py-2") }}
+        </div>
+        <div>
+            {{ form.submit(class_="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

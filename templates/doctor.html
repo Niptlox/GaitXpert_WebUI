@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Панель врача{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-8 text-blue-900">Пациенты</h2>
+<form method="get" class="mb-8 flex flex-col md:flex-row gap-2 md:gap-4 items-center">
+    <input type="text" name="search" value="{{ search }}" placeholder="Поиск по email" class="border rounded px-3 py-2 w-full md:w-64">
+    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition">Найти</button>
+    {% if search %}
+    <a href="{{ url_for('doctor_panel') }}" class="text-gray-500 ml-2">Сбросить</a>
+    {% endif %}
+</form>
+<div class="grid md:grid-cols-1 gap-8">
+    {% for patient in patients %}
+    <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6 border border-gray-200">
+        <div class="flex items-center gap-2 mb-2">
+            <span class="font-semibold text-blue-700 text-lg">{{ patient.email }}</span>
+        </div>
+        {% if patient.videos %}
+        <div class="flex flex-col gap-6">
+            {% for video in patient.videos[::-1] %}
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col gap-2">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-sm text-gray-800">{{ video.filename }}</span>
+                        <span class="text-xs text-gray-500">{{ video.uploaded_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-600">Прогресс:</span>
+                        <div class="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: {{ (video.progress * 100)|round(0) }}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-600">{{ (video.progress * 100)|round(0) }}%</span>
+                        <span class="text-xs ml-2 {{ 'text-green-600' if video.is_finish else 'text-yellow-600' }}">{{ 'Готово' if video.is_finish else 'В процессе' }}</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <span class="font-bold">Результат:</span>
+                    <span class="ml-2 {% if video.result %}{% if 'норм' in video.result|lower %}text-green-700{% elif 'болезнь' in video.result|lower or 'аномал' in video.result|lower %}text-red-700{% else %}text-gray-700{% endif %}{% else %}text-gray-400{% endif %} font-semibold">{{ video.result or '—' }}</span>
+                </div>
+                <form method="post" class="flex gap-2 mb-2">
+                    <input type="hidden" name="video_id" value="{{ video.id }}">
+                    <input type="text" name="comment" placeholder="Комментарий" class="border rounded px-3 py-1 w-full md:w-64" required>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700">Сохранить</button>
+                </form>
+                <div class="mt-1 flex flex-col gap-1">
+                    {% for comment in video.comments %}
+                        <div class="bg-blue-50 border-l-4 border-blue-400 px-2 py-1 text-xs text-gray-700 rounded mb-1">
+                            <span class="font-semibold">{{ comment.doctor.email }}</span>: {{ comment.text }}
+                            <span class="text-gray-400">({{ comment.created_at.strftime('%d.%m.%Y %H:%M') }})</span>
+                        </div>
+                    {% endfor %}
+                    <a href="{{ url_for('video_comments', video_id=video.id) }}" class="text-blue-500 hover:underline text-xs mt-1">История комментариев</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-gray-400 text-sm">Нет загруженных видео</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

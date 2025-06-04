@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}ЛК Пациента{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+        <h2 class="text-2xl font-bold text-blue-900">Личний кабинет пациента</h2>
+    </div>
+    {% if videos and videos|length > 0 %}
+    {% set last_video = videos[0] %}
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 flex flex-col gap-6" data-video-id="{{ last_video.id }}" data-processing-id="{{ last_video.processing_id }}" data-is-finish="{{ 1 if last_video.is_finish else 0 }}">
+        <h3 class="font-semibold text-xl text-blue-700 mb-2">Последнее загруженное видео</h3>
+        <div class="flex flex-col gap-4">
+            {% if last_video.filename.lower().endswith('.mp4') or last_video.filename.lower().endswith('.mov') or last_video.filename.lower().endswith('.webm') %}
+            <video src="/instance/{{ last_video.filename }}" class="rounded-xl shadow mb-4 w-full" style="max-height:510px; max-width:100%;" controls preload="none"></video>
+            {% endif %}
+            <div class="flex items-center gap-4 mb-2">
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="progress-bar h-4 rounded-full transition-all duration-500 {{ 'bg-blue-600' if not last_video.is_finish else 'bg-green-500' }}" style="width: {{ (last_video.progress * 100)|round(0) }}%"></div>
+                </div>
+                <span class="text-base text-gray-700 font-semibold progress-text">{{ (last_video.progress * 100)|round(0) }}%</span>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="font-bold text-lg">Статус:</span>
+                {% if last_video.is_finish %}
+                    <span class="text-green-600 font-bold status-text flex items-center gap-1 text-lg"><svg class="inline h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Готово</span>
+                {% else %}
+                    <span class="text-yellow-600 font-bold status-text flex items-center gap-1 text-lg"><svg class="inline h-5 w-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"/></svg>Обработка...</span>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                <span class="font-bold text-lg">Результат:</span>
+                <span class="result-text text-lg font-bold {% if last_video.result %}{% if 'норм' in last_video.result|lower %}text-green-700{% elif 'болезнь' in last_video.result|lower or 'аномал' in last_video.result|lower %}text-red-700{% else %}text-gray-700{% endif %}{% else %}text-gray-400{% endif %}">
+                    {{ last_video.result or '—' }}
+                </span>
+            </div>
+            <div class="mb-2">
+                <span class="font-bold text-lg">Комментарии врача:</span>
+                <div class="mt-2 flex flex-col gap-3">
+                    {% for comment in last_video.comments %}
+                        <div class="bg-blue-50 border-l-8 border-blue-400 px-4 py-3 text-base text-gray-800 rounded-xl shadow">
+                            <span class="font-semibold">{{ comment.doctor.email }}</span>: {{ comment.text }}
+                            <span class="text-gray-400 text-sm">({{ comment.created_at.strftime('%d.%m.%Y %H:%M') }})</span>
+                        </div>
+                    {% else %}
+                        <span class="text-gray-400 text-base">Комментариев нет</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="grid md:grid-cols-1 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col gap-4">
+            <h3 class="font-semibold text-lg text-blue-700 mb-2">Загрузить видео на анализ</h3>
+            <form id="uploadForm" method="post" enctype="multipart/form-data" class="flex flex-col gap-3">
+                <label class="block">
+                    <span class="text-gray-700 text-sm">Выберите файл</span>
+                    <input type="file" id="videoInput" name="video" accept="video/*" required class="mt-1 border rounded px-3 py-2 w-full">
+                </label>
+                <video id="videoPreview" class="w-full rounded shadow mb-2 hidden" controls style="max-height:220px;"></video>
+                <div id="uploadProgressWrapper" class="w-full bg-gray-200 rounded-full h-3 hidden">
+                    <div id="uploadProgressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <button type="submit" id="uploadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition">Загрузить</button>
+            </form>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col gap-4">            
+            <form method="get" class="flex flex-col gap-2 md:flex-row md:items-center">
+                <h3 class="font-semibold text-lg text-blue-700 mr-auto">Фильтр по дате</h3>                
+                <input type="date" name="date_from" value="{{ date_from }}" class="border rounded px-2 py-1">
+                <span class="hidden md:inline">—</span>
+                <input type="date" name="date_to" value="{{ date_to }}" class="border rounded px-2 py-1">
+                <button type="submit" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-1 rounded">Применить</button>
+                {% if date_from or date_to %}
+                <a href="{{ url_for('patient_panel') }}" class="text-gray-500 ml-2">Сбросить</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% if videos %}
+    
+    <div class="grid md:grid-cols-2 gap-6">
+        {% for video in videos %}
+        <div class="bg-white rounded-xl shadow p-5 flex flex-col gap-2 relative border border-gray-100 hover:border-blue-300 transition">
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-semibold text-blue-700 break-all">{{ video.filename }}</span>
+                <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}" onsubmit="return confirm('Удалить видео?');">
+                    <button type="submit" title="Удалить" class="text-red-500 hover:text-red-700 p-1 rounded-full bg-red-50 hover:bg-red-100 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </form>
+            </div>
+            <div class="text-xs text-gray-500 mb-2">Загружено: {{ video.uploaded_at.strftime('%d.%m.%Y %H:%M') }}</div>
+            <div class="flex items-center gap-2 mb-1">
+                {% if video.filename.lower().endswith('.mp4') or video.filename.lower().endswith('.mov') or video.filename.lower().endswith('.webm') %}
+                <video src="/instance/{{ video.filename }}" class="rounded shadow" style="max-height:120px; max-width:100%;" controls preload="none"></video>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center gap-2 mb-1">
+                <span class="font-bold">Статус:</span>
+                {% if video.is_finish %}
+                    <span class="text-green-600 font-semibold status-text flex items-center gap-1"><svg class="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Готово</span>
+                {% else %}
+                    <span class="text-yellow-600 font-semibold status-text flex items-center gap-1"><svg class="inline h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"/></svg>Обработка...</span>
+                {% endif %}
+            </div>
+            <div class="mb-1">
+                <span class="font-bold">Результат:</span>
+                <span class="result-text {% if video.result %}{% if 'норм' in video.result|lower %}text-green-700{% elif 'болезнь' in video.result|lower or 'аномал' in video.result|lower %}text-red-700{% else %}text-gray-700{% endif %}{% else %}text-gray-400{% endif %} font-semibold">
+                    {{ video.result or '—' }}
+                </span>
+            </div>
+            <div class="mb-1">
+                <span class="font-bold">Комментарии врача:</span>
+                <div class="mt-1 flex flex-col gap-1">
+                    {% for comment in video.comments %}
+                        <div class="bg-blue-50 border-l-4 border-blue-400 px-2 py-1 text-xs text-gray-700 rounded">
+                            <span class="font-semibold">{{ comment.doctor.email }}</span>: {{ comment.text }}
+                            <span class="text-gray-400">({{ comment.created_at.strftime('%d.%m.%Y %H:%M') }})</span>
+                        </div>
+                    {% else %}
+                        <span class="text-gray-400 text-xs">Комментариев нет</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-16">
+        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="Нет анализов" class="w-32 mb-4 opacity-60">
+        <div class="text-gray-500 text-lg">У вас пока нет загруженных анализов</div>
+    </div>
+    {% endif %}
+</div>
+<script>
+// Видео превью
+const videoInput = document.getElementById('videoInput');
+const videoPreview = document.getElementById('videoPreview');
+videoInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        const url = URL.createObjectURL(file);
+        videoPreview.src = url;
+        videoPreview.classList.remove('hidden');
+        videoPreview.load();
+    } else {
+        videoPreview.classList.add('hidden');
+        videoPreview.src = '';
+    }
+});
+// Прогресс-бар загрузки
+const uploadForm = document.getElementById('uploadForm');
+const uploadBtn = document.getElementById('uploadBtn');
+const uploadProgressWrapper = document.getElementById('uploadProgressWrapper');
+const uploadProgressBar = document.getElementById('uploadProgressBar');
+if (uploadForm) {
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(uploadForm);
+        uploadBtn.disabled = true;
+        uploadProgressWrapper.classList.remove('hidden');
+        uploadProgressBar.style.width = '0%';
+        fetch('', {
+            method: 'POST',
+            body: formData,
+        }).then(response => {
+            uploadProgressBar.style.width = '100%';
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
+        });
+    });
+}
+// Прогресс обработки
+function updateProgress() {
+    document.querySelectorAll('.progress-bar').forEach(function(bar) {
+        var card = bar.closest('div[data-video-id]') || bar.closest('.bg-white');
+        if (!card) return;
+        var row = card.closest('[data-video-id]');
+        if (row && row.dataset.isFinish === '0' && row.dataset.processingId) {
+            fetch(`/patient/progress/${row.dataset.videoId}`)
+                .then(r => r.json())
+                .then(data => {
+                    bar.style.width = (data.progress * 100).toFixed(0) + '%';
+                    card.querySelector('.progress-text').textContent = (data.progress * 100).toFixed(0) + '%';
+                    if (data.is_finish) {
+                        bar.classList.remove('bg-blue-600');
+                        bar.classList.add('bg-green-500');
+                        card.querySelector('.status-text').innerHTML = '<svg class="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Готово';
+                    } else {
+                        bar.classList.remove('bg-green-500');
+                        bar.classList.add('bg-blue-600');
+                        card.querySelector('.status-text').innerHTML = '<svg class="inline h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"/></svg>Обработка...';
+                    }
+                    card.querySelector('.result-text').textContent = data.result || '—';
+                    if (data.is_finish) row.dataset.isFinish = '1';
+                });
+        }
+    });
+}
+setInterval(updateProgress, 3000);
+</script>
+{% endblock %}

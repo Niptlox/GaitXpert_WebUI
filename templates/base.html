@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gait Analyzer{% endblock %}</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-white shadow mb-8">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-xl font-bold text-blue-600">Gait Analyzer</a>
+            <div>
+                {% if current_user.is_authenticated %}
+                    <span class="mr-4">{{ current_user.email }}</span>
+                    <a href="/logout" class="text-red-500 hover:underline">Выйти</a>
+                {% else %}
+                    <a href="/login" class="text-blue-500 hover:underline mr-4">Войти</a>
+                    <a href="/register" class="text-blue-500 hover:underline">Регистрация</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <div class="container px-4 max-w-5xl mx-auto">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-4">
+              {% for category, message in messages %}
+                <div class="p-2 rounded bg-{{ 'red' if category == 'error' else 'green' }}-100 text-{{ 'red' if category == 'error' else 'green' }}-800">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

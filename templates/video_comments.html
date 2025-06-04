@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Комментарии к видео{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Комментарии к видео</h2>
+<div class="mb-4">
+    <div class="font-mono">Файл: {{ video.filename }}</div>
+    <div class="text-sm text-gray-600">Загружено: {{ video.uploaded_at.strftime('%d.%m.%Y %H:%M') }}</div>
+    <div class="text-sm text-gray-600">Результат: {{ video.result or '-' }}</div>
+</div>
+<div class="bg-white rounded shadow p-4">
+    <h3 class="text-lg font-semibold mb-2">История комментариев</h3>
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="mb-3 border-b pb-2">
+                <div class="text-sm text-gray-700"><b>{{ comment.doctor.email }}</b> <span class="text-gray-400">({{ comment.created_at.strftime('%d.%m.%Y %H:%M') }})</span></div>
+                <div>{{ comment.text }}</div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-gray-500">Комментариев нет</div>
+    {% endif %}
+</div>
+<a href="{{ url_for('doctor_panel') }}" class="inline-block mt-6 text-blue-600 hover:underline">← Назад к пациентам</a>
+{% endblock %}
